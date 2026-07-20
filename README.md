@@ -12,14 +12,6 @@ Movie Night is a group movie-selection application that lets people discover mov
 - **Real-Time Voting Sessions** — Create or join a session with a 6-digit code and vote synchronously with your group until a movie wins.
 - **AI Assistant** — A short conversational Q&A that recommends a movie based on your mood and preferences.
 
-### Out of scope (for this version)
-- Push / email notifications
-- Payments, subscriptions, or monetization
-- In-app movie streaming or playback
-- Social features beyond session participation (no friends, DMs, comments, public profiles)
-- Asynchronous voting — all voting happens live, inside an active session
-- Offline mode
-
 ---
 
 ## 🧠 Core Concepts
