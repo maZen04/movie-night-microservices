@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  movie-service:
+    build: .
+    container_name: movie-service
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    volumes:
+      - .:/app
+
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: movie-redis
+
+    ports:
+      - "6379:6379"
+
+    restart: unless-stopped
