@@ -17,7 +17,7 @@ class MovieService:
         
         print("From TMDB")
         movies = tmdb.search_movie(movie_name, page)
-        cache.set(key, movies, 60*60*24)
+        cache.set(key, movies, 60*60*24*30)
 
         return movies
         

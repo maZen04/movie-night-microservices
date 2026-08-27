@@ -1,0 +1,12 @@
+django
+djangorestframework
+djangorestframework-simplejwt
+python-dotenv
+django-filter
+django-silk
+django-extensions
+django-debug-toolbar
+channels
+channels_redis
+uvicorn['standard']
+daphne

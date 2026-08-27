@@ -4,6 +4,8 @@ Movie Night is a group movie-selection application that lets people discover mov
 
 ---
 
+<<<<<<< Updated upstream
+
 ## 🚧 Build Status
 
 This project is under active development. Not every service in the design below has code in this repo yet — see [Repository Structure](#-repository-structure) for what actually exists right now.
