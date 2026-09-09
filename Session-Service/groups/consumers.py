@@ -3,7 +3,7 @@ import json
 from urllib.parse import parse_qs
 from channels.db import database_sync_to_async
 from .models import *
-from .vote_store import VoteStorageService
+from .services.vote_store import VoteStorageService
 
 vote_storage = VoteStorageService()
 
@@ -13,11 +13,19 @@ class SessionConsumer(AsyncWebsocketConsumer):
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
 
         self.room_group_name = f"session_{self.session_id}"
+        print("="*50)
+        headers = dict(self.scope.get("headers", []))
+        print("WEBSOCKET HEADERS:", headers)
 
-        query_string = self.scope["query_string"].decode()
-        params = parse_qs(query_string)
+        user_id = headers.get(b"x-user-id")
 
-        self.user_id = params.get("user_id", [None])[0]
+        print("USER ID FROM HEADER:", user_id)
+
+        if not user_id:
+            await self.close(code=4001)
+            return
+
+        self.user_id = int(user_id.decode())
 
         session = await database_sync_to_async(
             Session.objects.filter(id=self.session_id).first
@@ -186,14 +194,19 @@ class SessionConsumer(AsyncWebsocketConsumer):
             )()
 
         if likes == participant_count:
-            
+
+            movie = await vote_storage.get_movie_details(
+                self.session_id,
+                current_movie
+            )
+
             await database_sync_to_async(session.end)(current_movie)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "movie_selected",
-                    "movie_id": current_movie,
+                    "movie": movie,
                 }
             )
 
@@ -281,13 +294,22 @@ class SessionConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+
         message_type = data.get("type")
 
         if message_type == "like":
             await self.handle_like()
-        
-        elif data["type"] == "dislike":
+
+        elif message_type == "dislike":
             await self.handle_dislike()
+
+        else:
+            await self.send(
+                text_data=json.dumps({
+                    "type": "error",
+                    "message": "Invalid message type."
+                })
+            )
 
         # print(f"Received: {text_data} in {self.room_group_name}")
         # await self.send(text_data=text_data)
@@ -309,12 +331,14 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
     
     async def movie_selected(self, event):
+
         await self.send(
             text_data=json.dumps({
                 "type": "movie_selected",
-                "movie_id": event["movie_id"],
+                "movie": event["movie"],
             })
         )
+
         await self.close()
 
     async def no_winner(self, event):

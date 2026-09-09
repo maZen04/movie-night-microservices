@@ -1,0 +1,64 @@
+services:
+
+  redis:
+    image: redis:7
+    container_name: movie-night-redis
+    ports:
+      - "6379:6379"
+
+  user-service:
+    build:
+      context: ./User-Service
+    container_name: movie-night-user-service
+    env_file:
+      - ./User-Service/.env
+    ports:
+      - "8001:8000"
+
+  movie-service:
+    build:
+      context: ./Movie-Service
+    container_name: movie-night-movie-service
+    env_file:
+      - ./Movie-Service/.env
+    ports:
+      - "8002:8000"
+    depends_on:
+      - redis
+
+  session-service:
+    build:
+      context: ./Session-Service
+    container_name: movie-night-session-service
+    env_file:
+      - ./Session-Service/.env
+    ports:
+      - "8003:8000"
+    depends_on:
+      - redis
+      - movie-service
+
+  chat-service:
+    build:
+      context: ./Chat-Service
+    container_name: movie-night-chat-service
+    env_file:
+      - ./Chat-Service/.env
+    ports:
+      - "8004:8000"
+    depends_on:
+      - movie-service
+
+  api-gateway:
+    build:
+      context: ./API-Gateway
+    container_name: movie-night-api-gateway
+    env_file:
+      - ./API-Gateway/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user-service
+      - movie-service
+      - session-service
+      - chat-service

@@ -32,6 +32,6 @@ class MovieService:
         
         print("From TMDB")
         movies = tmdb.get_movie_recommendations(movie_id)
-        cache.set(key, movies, 60*60*24)
+        cache.set(key, movies, 60*60*24*30)
 
         return movies

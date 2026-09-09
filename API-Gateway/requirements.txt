@@ -1,0 +1,10 @@
+django 
+djangorestframework 
+djangorestframework-simplejwt 
+httpx 
+django-cors-headers
+python-dotenv
+django-debug-toolbar
+websockets
+daphne
+drf-spectacular

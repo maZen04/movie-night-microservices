@@ -11,6 +11,7 @@ from .serializers import (
     AnswerSerializer,
 )
 from .services.llm_service import LLMService
+from .services.movie_service import MovieService
 
 
 class StartRecommendationView(APIView):
@@ -134,20 +135,52 @@ class CompleteRecommendationView(APIView):
             })
 
         try:
+            print("STEP 1 - Calling LLM")
             llm_service = LLMService()
 
             recommendation = llm_service.recommend_movie(
                 session.answers
             )
 
+            print("STEP 2 - LLM response:", recommendation)
+
+            movie_title = recommendation["movie_title"]
+
+            print("STEP 3 - Searching:", movie_title)
+            movie_service = MovieService()
+
+            search_result = movie_service.search_movie(
+                movie_title
+            )
+
+            print("STEP 4 - Search response:", search_result)
+
+            results = search_result.get("results", [])
+
+            if not results:
+                return Response({
+                    "status": "failed",
+                    "message": "Could not find the recommended movie."
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            movie_id = results[0]["id"]
+            print("STEP 5 - Movie ID:", movie_id)
+            movie = movie_service.get_movie_details(movie_id)
+            print("STEP 6 - Movie details received")
+
         except Exception as e:
-            print("LLM ERROR:", repr(e))
+            import traceback
+
+            print("RECOMMENDATION ERROR:", repr(e))
+            traceback.print_exc()
+
             return Response({
                 "status": "failed",
-                "message": "Movie recommendation is temporarily unavailable."
+                "message": str(e),
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         return Response({
             "status": "completed",
             "recommendation": recommendation,
+            "movie":movie
         })

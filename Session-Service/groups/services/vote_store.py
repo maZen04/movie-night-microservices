@@ -1,5 +1,6 @@
 import redis.asyncio as redis
 from django.conf import settings
+import json
 
 class VoteStorageService:
 
@@ -17,6 +18,32 @@ class VoteStorageService:
 
     def _likes_key(self, session_id):
         return f"session:{session_id}:movies:likes"
+
+    def _details_key(self, session_id):
+        return f"session:{session_id}:movies:details"
+    
+        
+    async def set_movie_details(self, session_id, movie_details):
+
+        await self.redis.hset(
+            self._details_key(session_id),
+            mapping={
+                str(movie_id): json.dumps(movie)
+                for movie_id, movie in movie_details.items()
+            }
+        )
+
+    async def get_movie_details(self, session_id, movie_id):
+
+        data = await self.redis.hget(
+            self._details_key(session_id),
+            str(movie_id)
+        )
+
+        if not data:
+            return None
+
+        return json.loads(data)
         
     async def initialize_session(self, session_id, users_movies):
         """
@@ -147,11 +174,14 @@ class VoteStorageService:
         return movie_id
 
     async def clear_session(self, session_id, user_ids):
+
         keys = [
             self._likes_key(session_id),
+            self._details_key(session_id),
         ]
 
         for user_id in user_ids:
+
             keys.append(
                 self._movies_key(session_id, user_id)
             )

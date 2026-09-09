@@ -6,3 +6,4 @@ django-filter
 django-silk
 django-extensions
 django-debug-toolbar
+psycopg[binary]

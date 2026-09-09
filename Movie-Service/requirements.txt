@@ -9,3 +9,4 @@ django-debug-toolbar
 requests
 redis
 django-redis
+psycopg[binary]

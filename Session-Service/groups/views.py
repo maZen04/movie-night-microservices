@@ -8,6 +8,9 @@ from rest_framework.response import Response
 from rest_framework import generics
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from .services.movie_service import MovieService
+from .services.vote_store import VoteStorageService
+import random
 
 
 class CreateSessionView(APIView):
@@ -65,6 +68,8 @@ class JoinSessionView(APIView):
             raise ValidationError({
                 "session": ["You are already in this session."]
             })
+
+        
         
         SessionParticipant.objects.create(
             session=session,
@@ -91,30 +96,40 @@ class JoinSessionView(APIView):
 class StartSessionView(APIView):
 
     def post(self, request, session_id):
+
         user_id = request.headers.get("X-User-ID")
+
         if not user_id:
             raise ValidationError({
                 "user_id": ["User ID is required."]
             })
 
         session = Session.objects.filter(id=session_id).first()
+
         if not session:
             raise ValidationError({
                 "session": ["There's no session with this id."]
             })
 
-        participant = SessionParticipant.objects.filter(user_id=user_id,session=session).first()
+        participant = SessionParticipant.objects.filter(
+            user_id=user_id,
+            session=session
+        ).first()
+
         if not participant:
             raise ValidationError({
                 "user": ["You are not a member in this session."]
             })
 
-        members = SessionParticipant.objects.filter(session=session)
+        members = SessionParticipant.objects.filter(
+            session=session
+        )
+
         if members.count() < 2:
             raise ValidationError({
                 "session": ["Members should be more than one."]
             })
-        
+
         if participant.role == SessionParticipant.Role.MEMBER:
             raise ValidationError({
                 "user": ["You should be a leader to start the session."]
@@ -123,15 +138,129 @@ class StartSessionView(APIView):
         if session.status != Session.Status.WAITING:
             raise ValidationError({
                 "session": ["Session already started."]
-            })  
+            })
+
+        # --------------------------------
+        # Get participants
+        # --------------------------------
+
+        participant_ids = list(
+            SessionParticipant.objects.filter(
+                session=session
+            ).values_list(
+                "user_id",
+                flat=True
+            )
+        )
+
+        movie_service = MovieService()
+
+        users_movies = {}
+        movie_details = {}
+
+        # --------------------------------
+        # Get watchlists from Movie Service
+        # --------------------------------
+
+        for participant_id in participant_ids:
+
+            watchlist = movie_service.get_user_watchlist(
+                participant_id
+            )
+
+            users_movies[participant_id] = []
+
+            for item in watchlist:
+
+                movie = item["movie"]
+
+                movie_id = movie["id"]
+
+                # IDs used for voting
+                users_movies[participant_id].append(
+                    movie_id
+                )
+
+                # Data we will return to frontend
+                movie_details[movie_id] = {
+                    "id": movie_id,
+                    "title": movie["title"],
+                    "poster_path": movie["poster_path"],
+                }
+
+        # --------------------------------
+        # Create union of all movies
+        # --------------------------------
+
+        all_movies = list({
+            movie_id
+            for movies in users_movies.values()
+            for movie_id in movies
+        })
+
+        if not all_movies:
+            raise ValidationError({
+                "session": [
+                    "Participants must have at least one movie in their watchlists."
+                ]
+            })
+
+        # --------------------------------
+        # Give every user the same movies
+        # but in a different order
+        # --------------------------------
+
+        for participant_id in users_movies:
+
+            users_movies[participant_id] = all_movies.copy()
+
+            random.shuffle(
+                users_movies[participant_id]
+            )
+
+        print("=" * 50)
+        print("MOVIE DETAILS:")
+        print(movie_details)
+
+        print("=" * 50)
+        print("FINAL USERS MOVIES:")
+        print(users_movies)
+
+        # --------------------------------
+        # Start session
+        # --------------------------------
 
         session.start()
+
+        vote_storage = VoteStorageService()
+
+        # Store shuffled movie IDs
+        async_to_sync(
+            vote_storage.initialize_session
+        )(
+            session.id,
+            users_movies
+        )
+
+        # Store movie details
+        async_to_sync(
+            vote_storage.set_movie_details
+        )(
+            session.id,
+            movie_details
+        )
+
+        # --------------------------------
+        # Notify connected users
+        # --------------------------------
 
         serializer = SessionSerializer(session)
 
         channel_layer = get_channel_layer()
 
-        async_to_sync(channel_layer.group_send)(
+        async_to_sync(
+            channel_layer.group_send
+        )(
             f"session_{session.id}",
             {
                 "type": "session_started",
@@ -141,7 +270,7 @@ class StartSessionView(APIView):
 
         return Response({
             "message": "Session started successfully.",
-            "data":serializer.data
+            "data": serializer.data
         }, status=201)
 
 

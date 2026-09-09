@@ -30,8 +30,7 @@ class LLMService:
         Return ONLY valid JSON in this exact format:
 
         {{
-            "movie_title": "Movie title",
-            "movie_id": from tmdb
+            "movie_title": "Movie title"
         }}
         """
 

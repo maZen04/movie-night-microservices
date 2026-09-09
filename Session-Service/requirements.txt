@@ -8,5 +8,7 @@ django-extensions
 django-debug-toolbar
 channels
 channels_redis
-uvicorn['standard']
+uvicorn[standard]
 daphne
+requests
+psycopg[binary]
