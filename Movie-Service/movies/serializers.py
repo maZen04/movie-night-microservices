@@ -24,7 +24,7 @@ class MovieCard(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'overview', 'poster_path', 'release_date', 'vote_average']
+        fields = ['id', 'tmdb_id', 'title', 'overview', 'poster_path', 'release_date', 'vote_average']
 
 
 class WatchlistSerializer(serializers.ModelSerializer):

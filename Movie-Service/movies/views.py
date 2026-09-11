@@ -156,8 +156,9 @@ class WatchlistEditView(APIView):
     def delete(self, request, movie_id):
         user_id = request.headers.get("X-User-ID")
 
+        movie = Movie.objects.filter(id=movie_id).first()
         watchlist = Watchlist.objects.filter(
-            id=movie_id,
+            movie=movie,
             user_id=user_id
         ).first()
 
@@ -188,7 +189,7 @@ class WatchedEditView(APIView):
                     "movie_id": ["Movie not found."]
                 })
             
-            watchlist, created = Watched.objects.get_or_create(
+            watched, created = Watched.objects.get_or_create(
                 movie = movie,
                 user_id = user_id,
                 defaults={
@@ -201,7 +202,7 @@ class WatchedEditView(APIView):
                     "movie": ["Movie already you watched it."]
                 })
             
-            Watchlist.objects.filter(
+            Watched.objects.filter(
                 movie=movie,
                 user_id=user_id
             ).delete()
@@ -213,17 +214,18 @@ class WatchedEditView(APIView):
     def delete(self, request, movie_id):
         user_id = request.headers.get("X-User-ID")
 
-        watchlist = Watchlist.objects.filter(
-            id=movie_id,
+        movie = Movie.objects.filter(id=movie_id).first()
+        watched = Watched.objects.filter(
+            movie=movie,
             user_id=user_id
         ).first()
 
-        if not watchlist:
+        if not watched:
             raise ValidationError({
-                "movie": ["Movie is not in watchlist."]
+                "movie": ["Movie is not in watched history."]
             })
 
-        watchlist.delete()
+        watched.delete()
 
         return Response({
             "message": "Movie removed from watched history successfully."
