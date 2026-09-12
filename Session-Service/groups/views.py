@@ -88,7 +88,9 @@ class JoinSessionView(APIView):
         )
 
         return Response({
-            "message": "Joined session successfully."
+            "message": "Joined session successfully.",
+            "id": session.id
+
         }, status=201)
 
 

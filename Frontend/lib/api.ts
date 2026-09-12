@@ -108,6 +108,17 @@ export async function getMovieDetails(tmdbId: number | string) {
   return api<BackendMovie>(`/api/movies/${encodeURIComponent(tmdbId)}`)
 }
 
+export type MovieRecommendation = {
+  id: number | string
+  title: string
+  release_date?: string
+  poster_path?: string | null
+}
+
+export async function getMovieRecommendations(movieId: number | string) {
+  return api<MovieRecommendation[]>(`/api/movies/${encodeURIComponent(movieId)}/recommendations`)
+}
+
 export async function getWatchlist() {
   const payload = await api<BackendMovie[] | PaginatedMovies>('/api/watchlist')
   return normalizeMovieResults(payload)
@@ -181,7 +192,26 @@ export async function markMovieWatched(movie: BackendMovie, rating: number) {
   })
 }
 
-export function sessionSocket(sessionId: string, onMessage: (data: unknown) => void, onStatus: (status: 'connected' | 'disconnected' | 'reconnecting') => void) {
+export type Session = { id: number | string; code: string; status: string; created_at?: string; started_at?: string; ended_at?: string }
+
+export async function createSession(name?: string) {
+  return api<Session>('/api/sessions', { method: 'POST', body: JSON.stringify(name ? { name } : {}) })
+}
+
+export async function joinSession(code: string) {
+  return api<{ message: string; id: number | string }>('/api/sessions/join', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+export async function startSession(sessionId: number | string) {
+  if (sessionId == null || sessionId === '') throw new Error('A valid session ID is required to start the session.')
+  return api<Partial<Session>>(`/api/sessions/${encodeURIComponent(sessionId)}/start`, { method: 'POST' })
+}
+
+export async function endSession(sessionId: number | string) {
+  return api<Session>(`/api/sessions/${encodeURIComponent(sessionId)}/end`, { method: 'POST' })
+}
+
+export function sessionSocket(sessionId: string, onMessage: (data: unknown) => void, onStatus: (status: 'connected' | 'disconnected' | 'reconnecting') => void, onSocket?: (socket: WebSocket) => void) {
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('movie-night-access') : null
   const url = `${WS_BASE_URL}/ws/sessions/${sessionId}/?token=${encodeURIComponent(token || '')}`
   let socket: WebSocket | null = null
@@ -191,6 +221,7 @@ export function sessionSocket(sessionId: string, onMessage: (data: unknown) => v
     if (stopped) return
     onStatus(retry ? 'reconnecting' : 'reconnecting')
     socket = new WebSocket(url)
+    onSocket?.(socket)
     socket.onopen = () => { retry = 0; onStatus('connected') }
     socket.onmessage = (event) => { try { onMessage(JSON.parse(event.data)) } catch { onMessage(event.data) } }
     socket.onclose = () => { onStatus('disconnected'); if (!stopped) { retry += 1; window.setTimeout(connect, Math.min(1000 * retry, 8000)) } }

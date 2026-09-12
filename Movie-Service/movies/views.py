@@ -202,11 +202,6 @@ class WatchedEditView(APIView):
                     "movie": ["Movie already you watched it."]
                 })
             
-            Watched.objects.filter(
-                movie=movie,
-                user_id=user_id
-            ).delete()
-            
             return Response({
                 "message": "Movie added to Watched History successfully."
             }, status=status.HTTP_201_CREATED)

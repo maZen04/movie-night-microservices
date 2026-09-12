@@ -22,7 +22,7 @@ class LLMService:
         prompt = f"""
         You are a movie recommendation assistant.
 
-        Based on the user's answers, recommend one movie.
+        Based on the user's answers, recommend one movie (always return one movie not more not less).
 
         User answers:
         {json.dumps(answers, ensure_ascii=False)}
