@@ -202,9 +202,19 @@ export async function joinSession(code: string) {
   return api<{ message: string; id: number | string }>('/api/sessions/join', { method: 'POST', body: JSON.stringify({ code }) })
 }
 
+export async function getSession(sessionId: number | string) {
+  return api<Session>(`/api/sessions/${encodeURIComponent(sessionId)}`)
+}
+
 export async function startSession(sessionId: number | string) {
   if (sessionId == null || sessionId === '') throw new Error('A valid session ID is required to start the session.')
-  return api<Partial<Session>>(`/api/sessions/${encodeURIComponent(sessionId)}/start`, { method: 'POST' })
+  const result = await api<{ message?: string; data?: Partial<Session> } & Partial<Session>>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/start`,
+    { method: 'POST' },
+  )
+  // The backend wraps the updated session under `data`; unwrap it so callers
+  // actually see the new status (otherwise it silently stays "waiting").
+  return result.data ?? result
 }
 
 export async function endSession(sessionId: number | string) {

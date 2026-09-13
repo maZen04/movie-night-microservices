@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { addToWatchlist, answerRecommendation, api, authenticate, completeRecommendation, createSession, endSession, getMovieDetails, getMovieRecommendations, getWatchedHistory, getWatchlist, joinSession, logout, markMovieWatched, removeFromWatched, removeFromWatchlist, searchMovies, sessionSocket, startRecommendation, startSession, type BackendMovie, type RecommendationQuestion, type Session } from '@/lib/api'
+import { addToWatchlist, answerRecommendation, api, authenticate, completeRecommendation, createSession, getSession, endSession, getMovieDetails, getMovieRecommendations, getWatchedHistory, getWatchlist, joinSession, logout, markMovieWatched, removeFromWatched, removeFromWatchlist, searchMovies, sessionSocket, startRecommendation, startSession, type BackendMovie, type RecommendationQuestion, type Session } from '@/lib/api'
 import {
   ArrowLeft,
   Bot,
@@ -21,6 +21,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+
 
 const movies = [
   { id: 1, tmdb_id: 1, title: 'The Quiet Hours', year: '2024', rating: '8.4', genre: 'Drama · Mystery', overview: 'A pianist returns to the coast where she grew up and finds a forgotten recording that changes everything.', image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=85', backdrop: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1800&q=85' },
@@ -68,6 +69,7 @@ export default function Page() {
   const [sessionModal, setSessionModal] = useState<'create' | 'join' | null>(null)
   const [activeSession, setActiveSession] = useState<Session | null>(null)
   const [sessionRole, setSessionRole] = useState<'leader' | 'participant'>('participant')
+  const [sessionStarting, setSessionStarting] = useState(false)
   const [socketStatus, setSocketStatus] = useState<'connected' | 'disconnected' | 'reconnecting' | null>(null)
   const sessionCleanupRef = useRef<(() => void) | null>(null)
   const sessionSocketRef = useRef<WebSocket | null>(null)
@@ -119,6 +121,20 @@ export default function Page() {
   }, [activeSession?.id, activeSession?.status])
 
   useEffect(() => () => { sessionCleanupRef.current?.() }, [])
+  useEffect(() => {
+    if (activeSession?.status === 'active' && view === 'waiting') setView('voting')
+  }, [activeSession?.status, view])
+
+  useEffect(() => {
+    if (!activeSession?.id || activeSession.status !== 'waiting') return
+    let active = true
+    const interval = window.setInterval(() => {
+      getSession(activeSession.id).then((session) => {
+        if (active && session.status !== 'waiting') setActiveSession(session)
+      }).catch(() => undefined)
+    }, 2000)
+    return () => { active = false; window.clearInterval(interval) }
+  }, [activeSession?.id, activeSession?.status])
 
   useEffect(() => {
     if (view !== 'home' && view !== 'watchlist' && view !== 'history') return
@@ -191,13 +207,15 @@ export default function Page() {
   }
 
   async function handleSessionStart() {
-    if (!activeSession?.id || sessionRole !== 'leader') return
+    if (!activeSession?.id || sessionRole !== 'leader' || sessionStarting) return
+    setSessionStarting(true)
     try {
       const started = await startSession(activeSession.id)
-      // The start response may omit the ID; retain the ID used in the request.
       setActiveSession({ ...activeSession, ...started, id: started.id ?? activeSession.id, code: started.code ?? activeSession.code })
     } catch (error) {
       setCollectionError(error instanceof Error ? error.message : 'Could not start the session.')
+    } finally {
+      setSessionStarting(false)
     }
   }
 

@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+from urllib.parse import parse_qs
 
 from django.conf import settings
 from rest_framework_simplejwt.tokens import AccessToken
@@ -9,12 +10,13 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 async def websocket_proxy(scope, receive, send):
 
-    # Get JWT from WebSocket headers
-    headers = dict(scope.get("headers", []))
+    # Browsers cannot set custom headers (like Authorization) on native
+    # WebSocket connections, so the client sends the token as a query
+    # param instead (e.g. ?token=...). Read it from there.
+    query_params = parse_qs(scope.get("query_string", b"").decode())
+    raw_token = (query_params.get("token") or [None])[0]
 
-    auth_header = headers.get(b"authorization")
-
-    if not auth_header:
+    if not raw_token:
         await send({
             "type": "websocket.close",
             "code": 4001,
@@ -22,16 +24,12 @@ async def websocket_proxy(scope, receive, send):
         return
 
     try:
-        token_type, raw_token = auth_header.decode().split(" ", 1)
-
-        if token_type.lower() != "bearer":
-            raise TokenError("Invalid token type")
-
         token = AccessToken(raw_token)
 
         user_id = token["user_id"]
 
     except (ValueError, TokenError, KeyError):
+
         await send({
             "type": "websocket.accept",
         })
@@ -102,7 +100,7 @@ async def websocket_proxy(scope, receive, send):
 
             except websockets.exceptions.ConnectionClosed:
                 pass
-            
+
         # Send trusted user ID to Session Service
         # Session Service does NOT trust the client for this ID.
         await send({

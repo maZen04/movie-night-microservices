@@ -152,7 +152,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("movie-night-redis", 6379)],
+            "hosts": [{"address": "redis://movie-night-redis:6379", "socket_timeout": 10, "socket_connect_timeout": 10}],
         },
     },
 }

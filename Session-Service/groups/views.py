@@ -176,7 +176,7 @@ class StartSessionView(APIView):
 
                 movie = item["movie"]
 
-                movie_id = movie["id"]
+                movie_id = movie["tmdb_id"]
 
                 # IDs used for voting
                 users_movies[participant_id].append(
