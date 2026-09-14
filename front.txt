@@ -1,3 +1,0 @@
-id: detailMovie.id ?? movie.id,
-database_id: detailMovie.database_id ?? detailMovie.id ?? movie.id,
-tmdb_id: movie.tmdb_id,
