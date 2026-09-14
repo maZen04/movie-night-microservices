@@ -15,6 +15,8 @@ The project is built with **Django, Django REST Framework, PostgreSQL, Redis, We
   <img alt="OpenAPI" src="https://img.shields.io/badge/Docs-Swagger%20%2F%20OpenAPI-85EA2D?logo=swagger&logoColor=black">
 </p>
 
+<img width="1920" height="1078" alt="Movie Night — Decide together - Google Chrome 9_14_2026 3_43_52 AM" src="https://github.com/user-attachments/assets/8f71fcd1-1ec7-4b0d-af34-826347596939" />
+
 ## 📑 Table of Contents
 
 - [Why this is more than a CRUD app](#why-this-is-more-than-a-crud-app)
@@ -55,6 +57,12 @@ The most interesting code lives in `Session-Service/groups/consumers.py` (WebSoc
 - Auth enforced once, centrally, at the API Gateway — downstream services trust the `X-User-ID` header instead of re-validating JWTs themselves
 
 ### 🎬 Movie Discovery & Personal Library
+
+<img width="1920" height="1078" alt="Movie Night — Decide together - Google Chrome 9_14_2026 3_45_00 AM" src="https://github.com/user-attachments/assets/7b9f2481-5f2f-41f6-a63e-92f752552bf3" />
+
+<img width="1920" height="1078" alt="Movie Night — Decide together - Google Chrome 9_14_2026 3_45_28 AM" src="https://github.com/user-attachments/assets/5b2b2dc5-da48-4007-af86-285d490de97d" />
+
+
 - Search movies live via the [TMDB](https://www.themoviedb.org/) API
 - Rich movie details: poster, overview, release year, rating
 - Similar-movie recommendations per title
@@ -65,6 +73,8 @@ The most interesting code lives in `Session-Service/groups/consumers.py` (WebSoc
 - Throttling on the expensive, TMDB-backed endpoints
 
 ### 👥 Real-Time Group Voting Sessions
+<img width="1280" height="720" alt="sessionvideo-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/81dc0236-b7c1-4353-bcde-fe6873c303a3" />
+
 - Create a session and get a unique 6-digit join code
 - Join an existing session with that code
 - Session-scoped **Leader**/**Member** roles (not account-level roles)
@@ -77,6 +87,8 @@ The most interesting code lives in `Session-Service/groups/consumers.py` (WebSoc
 - Session cleanup: all temporary Redis state is deleted once a session ends
 
 ### 🤖 AI-Powered Recommendations
+<img width="800" height="450" alt="ai chat" src="https://github.com/user-attachments/assets/2fecb4b6-b88c-4346-84a3-63387d39ca19" />
+
 - Start a short conversational Q&A about mood and preferences
 - Structured, validated answer collection across multiple turns
 - Preferences sent to an LLM (via Groq) to generate a suggested title
