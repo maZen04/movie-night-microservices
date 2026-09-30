@@ -72,8 +72,14 @@ class MovieDetailView(APIView):
                         release_date=movie_details["release_date"],
                         runtime=movie_details["runtime"],
                         original_language=movie_details["original_language"],
-                        vote_average=round(movie_details["vote_average"], 2),
+                        vote_average=(
+                            round(movie_details["vote_average"], 2)
+                            if movie_details["vote_average"] is not None
+                            else None
+                        ),
                     )
+                    print("TMDB ID:", movie_details["tmdb_id"])
+                    print("Vote average:", movie_details["vote_average"])
                     movie.full_clean()
                     movie.save()
 

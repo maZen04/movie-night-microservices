@@ -9,7 +9,7 @@ class Movie(models.Model):
     release_date = models.DateField(null=True, blank=True)
     runtime = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     original_language = models.CharField(max_length=10, null=True, blank=True)
-    vote_average = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    vote_average = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(10)])
 
     def __str__(self):
         return self.title

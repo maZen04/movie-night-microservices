@@ -217,8 +217,12 @@ export async function startSession(sessionId: number | string) {
   return result.data ?? result
 }
 
-export async function endSession(sessionId: number | string) {
-  return api<Session>(`/api/sessions/${encodeURIComponent(sessionId)}/end`, { method: 'POST' })
+export async function endSession(sessionId: number | string, movieTmdbId: number | string) {
+  const result = await api<{ message?: string; data?: Partial<Session> } & Partial<Session>>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/end`,
+    { method: 'POST', body: JSON.stringify({ movie_tmdb_id: movieTmdbId }) },
+  )
+  return result.data ?? result
 }
 
 export function sessionSocket(sessionId: string, onMessage: (data: unknown) => void, onStatus: (status: 'connected' | 'disconnected' | 'reconnecting') => void, onSocket?: (socket: WebSocket) => void) {
